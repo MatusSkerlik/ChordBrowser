@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@+id/chordsGridFragment">
+    <fragment
+        android:id="@+id/chordsGridFragment"
+        android:name="sk.matusskerlik.chordbrowser.ui.fragments.ChordsGridFragment"
+        android:label="fragment_chords_gird"
+        tools:layout="@layout/fragment_chords_gird" >
+        <action
+            android:id="@+id/action_chordsGridFragment_to_chordDetailFragment"
+            app:destination="@id/chordDetailFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/chordDetailFragment"
+        android:name="sk.matusskerlik.chordbrowser.ui.fragments.ChordDetailFragment"
+        android:label="fragment_chord_detail"
+        tools:layout="@layout/fragment_chord_detail" />
+</navigation>
