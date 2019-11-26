@@ -9,16 +9,18 @@ import android.util.SparseIntArray;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import sk.matusskerlik.chordbrowser.model.Chord;
 
 public class ChordPlayer {
 
+    public static int CHORD_SEQUENCE_DELAY = 333;
+    public static int NOTE_LENGTH = 4000;
+
     private Context context;
-    private List<AtomicBoolean> canPlayReferences = new ArrayList<>();
-    private AtomicIntegerArray currentlyPlayedResources = new AtomicIntegerArray(6);
+    private List<AtomicBoolean> playableReferences = new ArrayList<>();
+    private AtomicIntegerArray playedResources = new AtomicIntegerArray(6);
 
     private SoundPool soundPool = new SoundPool.Builder()
             .setAudioAttributes(
@@ -41,6 +43,8 @@ public class ChordPlayer {
     }
 
     private void init() {
+
+        playableReferences.add(new AtomicBoolean(true));
 
         for (int i = 40; i < 79; i++) {
 
@@ -65,9 +69,13 @@ public class ChordPlayer {
 
         int delay = 0;
 
-        // disable future plays
-        if (canPlayReferences.size() > 0)
-            canPlayReferences.get(canPlayReferences.size() - 1).set(false);
+        // disable before postDelayed plays
+        playableReferences.get(playableReferences.size() - 1).set(false);
+
+        // set new AtomicBoolean for current play
+        // playableRef will be passed as reference to handler closure, value inside can be updated
+        final AtomicBoolean playableRef = new AtomicBoolean(true);
+        playableReferences.add(playableRef);
 
         for (Chord.StringHelper.GUITAR_STRING string : Chord.StringHelper.GUITAR_STRING.values()) {
 
@@ -78,21 +86,18 @@ public class ChordPlayer {
             final int resId = mapStringFretToAudio(string.getNum(), fret);
 
             //stop current plays
-            final int beforeId = currentlyPlayedResources.getAndSet(string.getNum() - 1, resId);
+            final int beforeId = playedResources.getAndSet(string.getNum() - 1, resId);
             soundPool.stop(beforeId);
-
-            canPlayReferences.add(new AtomicBoolean(true));
-            final AtomicBoolean canPlay = canPlayReferences.get(canPlayReferences.size() - 1);
 
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    if (canPlay.get())
-                        soundPool.play(resId, 1, 1, 1, 0, 1);
+                    if (playableRef.get())
+                        soundPool.play(resId, 0.8f, 0.8f, 1, 0, 1);
                 }
             }, delay);
 
-            delay+=500;
+            delay+=CHORD_SEQUENCE_DELAY;
         }
     }
 }
