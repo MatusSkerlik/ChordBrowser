@@ -36,11 +36,12 @@ public class ChordsGridFragment extends DaggerFragment {
     @Inject
     public ChordsGridViewModel mViewModel;
 
+    @Inject
+    public ChordPlayer chordPlayer;
+
     private RecyclerView chordGroupRecyclerView;
     private RecyclerView chordRecyclerView;
     private ChordView chordView;
-
-    private ChordPlayer chordPlayer;
     private long disablePlayerUntil = 0;
 
     private int lastFocusedChordIndex = 0;
@@ -109,14 +110,14 @@ public class ChordsGridFragment extends DaggerFragment {
 
                 chordAdapter.replaceBy(chordGroupAdapter.getItemAt(middleElement).getChords());
 
-                Chord chordToDraw;
                 try {
-                    chordToDraw = chordAdapter.getItemAt(lastFocusedChordIndex);
+                    lastFocusedChord = chordAdapter.getItemAt(lastFocusedChordIndex);
                 } catch (IndexOutOfBoundsException ignore) {
-                    chordToDraw = chordAdapter.getItemAt(chordAdapter.getItemCount() - 1);
+                    lastFocusedChord = chordAdapter.getItemAt(chordAdapter.getItemCount() - 1);
                 }
 
-                chordView.setChordToDraw(chordToDraw);
+                chordView.setChordToDraw(lastFocusedChord);
+                chordPlayer.playChord(lastFocusedChord);
             }
         });
 
@@ -141,7 +142,6 @@ public class ChordsGridFragment extends DaggerFragment {
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
 
-
         new AccelerationSensor(context).onAcceleration(new AccelerationSensor.AccelerationCallback() {
             @Override
             public void onAcceleration() {
@@ -156,8 +156,6 @@ public class ChordsGridFragment extends DaggerFragment {
                     }
             }
         });
-
-        chordPlayer = new ChordPlayer(context);
     }
 
     private static class MiddleItemFinder extends RecyclerView.OnScrollListener {

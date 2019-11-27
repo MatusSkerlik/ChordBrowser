@@ -15,12 +15,12 @@ import javax.inject.Inject;
 import sk.matusskerlik.chordbrowser.model.ChordGroup;
 import sk.matusskerlik.chordbrowser.model.repository.ChordRepository;
 
-public class ChordsGridViewModel extends ViewModel {
+public class LoadingViewModel extends ViewModel {
 
     private ChordRepository chordRepository;
 
     @Inject
-    public ChordsGridViewModel(ChordRepository chordRepository) {
+    public LoadingViewModel(ChordRepository chordRepository) {
         this.chordRepository = chordRepository;
     }
 

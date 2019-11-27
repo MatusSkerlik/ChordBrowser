@@ -15,7 +15,9 @@ abstract class MainActivityModule {
     @ActivityScope
     @ContributesAndroidInjector(modules = {
             FragmentsModule.class,
-            RetrofitModule.class
+            RetrofitModule.class,
+            RepositoryModule.class,
+            AudioModule.class
     })
     abstract MainActivity contributeActivityInjector();
 }

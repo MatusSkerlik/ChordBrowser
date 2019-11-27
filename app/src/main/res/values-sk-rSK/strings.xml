@@ -1,11 +1,9 @@
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright (c) 2019 Matúš Škerlík.
   ~ All rights reserved.
   -->
 
 <resources>
-    <string name="loading">Načítavam…</string>
     <string name="app_name">Knižnica akordov</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
+    <string name="loading">Načítavam...</string>
 </resources>

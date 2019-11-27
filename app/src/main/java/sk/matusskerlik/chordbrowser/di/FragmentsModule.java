@@ -8,6 +8,7 @@ package sk.matusskerlik.chordbrowser.di;
 import dagger.Module;
 import dagger.android.ContributesAndroidInjector;
 import sk.matusskerlik.chordbrowser.ui.fragments.ChordsGridFragment;
+import sk.matusskerlik.chordbrowser.ui.fragments.LoadingFragment;
 
 @Module
 abstract class FragmentsModule {
@@ -16,5 +17,11 @@ abstract class FragmentsModule {
     @ContributesAndroidInjector(modules = {
             ViewModelModule.class,
     })
-    abstract ChordsGridFragment contributeForgotPasswordInjector();
+    abstract LoadingFragment contributeLoginInjector();
+
+    @FragmentScope
+    @ContributesAndroidInjector(modules = {
+            ViewModelModule.class,
+    })
+    abstract ChordsGridFragment contributeChordsGridInjector();
 }

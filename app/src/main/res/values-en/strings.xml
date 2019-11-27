@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2019 Matúš Škerlík.
+  ~ All rights reserved.
+  -->
+
+<resources>
+    <string name="app_name">Chord Liblary</string>
+    <string name="loading">Loading…</string>
+</resources>

@@ -12,7 +12,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
-import java.util.concurrent.Executor;
 
 import javax.inject.Provider;
 
@@ -20,9 +19,9 @@ import dagger.MapKey;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoMap;
-import sk.matusskerlik.chordbrowser.model.database.ChordDatabase;
-import sk.matusskerlik.chordbrowser.model.webservice.ChordsWebService;
+import sk.matusskerlik.chordbrowser.model.repository.ChordRepository;
 import sk.matusskerlik.chordbrowser.ui.fragments.ChordsGridViewModel;
+import sk.matusskerlik.chordbrowser.ui.fragments.LoadingViewModel;
 
 @Module
 public class ViewModelModule {
@@ -37,8 +36,16 @@ public class ViewModelModule {
     @IntoMap
     @FragmentScope
     @ViewModelKey(ChordsGridViewModel.class)
-    public ViewModel chordsViewModel(ChordsWebService chordsWebService, ChordDatabase chordDatabase, Executor executor) {
-        return new ChordsGridViewModel(chordsWebService, chordDatabase, executor);
+    public ViewModel chordsViewModel(ChordRepository chordRepository) {
+        return new ChordsGridViewModel(chordRepository);
+    }
+
+    @Provides
+    @IntoMap
+    @FragmentScope
+    @ViewModelKey(LoadingViewModel.class)
+    public ViewModel loadingViewModel(ChordRepository chordRepository) {
+        return new LoadingViewModel(chordRepository);
     }
 
     @Target(ElementType.METHOD)

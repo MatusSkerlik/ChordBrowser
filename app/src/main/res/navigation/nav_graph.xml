@@ -7,19 +7,19 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@+id/chordsGridFragment">
+    app:startDestination="@id/loadingFragment">
     <fragment
         android:id="@+id/chordsGridFragment"
         android:name="sk.matusskerlik.chordbrowser.ui.fragments.ChordsGridFragment"
         android:label="fragment_chords_gird"
-        tools:layout="@layout/fragment_chords_gird" >
-        <action
-            android:id="@+id/action_chordsGridFragment_to_chordDetailFragment"
-            app:destination="@id/chordDetailFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_chords_gird" />
     <fragment
-        android:id="@+id/chordDetailFragment"
-        android:name="sk.matusskerlik.chordbrowser.ui.fragments.ChordDetailFragment"
-        android:label="fragment_chord_detail"
-        tools:layout="@layout/fragment_chord_detail" />
+        android:id="@+id/loadingFragment"
+        android:name="sk.matusskerlik.chordbrowser.ui.fragments.LoadingFragment"
+        android:label="loading_fragment"
+        tools:layout="@layout/loading_fragment">
+        <action
+            android:id="@+id/action_loadingFragment_to_chordsGridFragment"
+            app:destination="@id/chordsGridFragment" />
+    </fragment>
 </navigation>
