@@ -1,21 +1,27 @@
 package sk.matusskerlik.chordbrowser.ui.fragments;
 
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import sk.matusskerlik.chordbrowser.R;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
 import java.util.List;
 
-public class ChordsRecyclerViewAdapter<T> extends RecyclerView.Adapter<ChordsRecyclerViewAdapter.ViewHolder> {
+import sk.matusskerlik.chordbrowser.R;
 
-    private final List<T> mValues;
+abstract class BaseViewAdapter<T> extends RecyclerView.Adapter<BaseViewAdapter.ViewHolder> {
 
-    ChordsRecyclerViewAdapter(List<T> items) {
+    final List<T> mValues;
+
+    BaseViewAdapter(List<T> items) {
         mValues = items;
+    }
+
+    BaseViewAdapter() {
+        mValues = new ArrayList<>();
     }
 
     @Override
@@ -33,11 +39,7 @@ public class ChordsRecyclerViewAdapter<T> extends RecyclerView.Adapter<ChordsRec
 
     }
 
-    void updateBy(List<T> update){
-        mValues.clear();
-        mValues.addAll(update);
-        notifyDataSetChanged();
-    }
+    abstract void replaceBy(List<T> update);
 
     T getItemAt(int position){
 
@@ -50,14 +52,14 @@ public class ChordsRecyclerViewAdapter<T> extends RecyclerView.Adapter<ChordsRec
     }
 
     public static class ViewHolder<T> extends RecyclerView.ViewHolder {
-        public final View mView;
-        public final TextView mContentView;
-        public T mItem;
+        final View mView;
+        final TextView mContentView;
+        T mItem;
 
-        public ViewHolder(View view) {
+        ViewHolder(View view) {
             super(view);
             mView = view;
-            mContentView = (TextView) view.findViewById(R.id.content);
+            mContentView = view.findViewById(R.id.content);
         }
 
         @Override

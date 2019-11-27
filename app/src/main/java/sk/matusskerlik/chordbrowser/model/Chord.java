@@ -1,26 +1,23 @@
 package sk.matusskerlik.chordbrowser.model;
 
 import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+import androidx.room.TypeConverter;
+import androidx.room.TypeConverters;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 
+@Entity(tableName = "chords")
 public class Chord implements Serializable {
 
-    public static class PitchHelper {
-
-        public static int getPitchNumber(int stringNum, int fret){
-
-            //TUNING = E2–A2–D3–G3–B3–E4.
-
-
-
-            return 40 + (stringNum - 1) * 5 + fret + (stringNum == StringHelper.GUITAR_STRING.e.num ? - 1 : 0);
-        }
-    }
+    @PrimaryKey(autoGenerate = true)
+    @JsonIgnore
+    public Integer id;
 
     public static class StringHelper {
 
@@ -92,37 +89,17 @@ public class Chord implements Serializable {
         }
     }
 
-    public static class FretHelper {
-
-        private static int tryParseString(String string){
-
-            try {
-                return Integer.parseInt(string);
-            } catch (NumberFormatException ignore){};
-
-            return -1;
-        }
-
-        public static int getFret(int string, Chord chord){
-
-            switch (string) {
-                case 1:
-                    return tryParseString(chord.getE());
-                case 2:
-                    return tryParseString(chord.getA());
-                case 3:
-                    return tryParseString(chord.getD());
-                case 4:
-                    return tryParseString(chord.getG());
-                case 5:
-                    return tryParseString(chord.getB());
-                case 6:
-                    return tryParseString(chord.getE2());
-            }
-
-            throw new IllegalStateException();
-        }
-    }
+    @ColumnInfo()
+    @TypeConverters(ChordTypeConverter.class)
+    @JsonProperty("modf")
+    public CHORD_TYPE type;
+    @ColumnInfo()
+    @TypeConverters(ChordKeyConverter.class)
+    @JsonProperty("chord")
+    public CHORD_KEY key;
+    @ColumnInfo()
+    @JsonProperty("e")
+    public String e;
 
     //minor, major, aug, dim, sus, add9, m6, m7, m9, maj7, maj9, mmaj7, -5, 11, 13, 5, 6, 6add9, 7, 7-5, 7maj5, 7sus4, 9
     public enum CHORD_TYPE {
@@ -220,41 +197,71 @@ public class Chord implements Serializable {
         }
     }
 
-    private static HashMap<Integer, Chord.CHORD_KEY> CHORD_PROGRESSION =
-            new HashMap<Integer, CHORD_KEY>(){{
-                put(1, CHORD_KEY.A);
-                put(2, CHORD_KEY.As);
-                put(3, CHORD_KEY.B);
-                put(4, CHORD_KEY.C);
-                put(5, CHORD_KEY.Cs);
-                put(6, CHORD_KEY.D);
-                put(7, CHORD_KEY.Ds);
-                put(8, CHORD_KEY.E);
-                put(9, CHORD_KEY.F);
-                put(10, CHORD_KEY.Fs);
-                put(11, CHORD_KEY.G);
-                put(12, CHORD_KEY.Gs);
-            }};
-
-    @JsonProperty("modf")
-    public CHORD_TYPE type;
-
-    @JsonProperty("chord")
-    public CHORD_KEY key;
-
-
-    @JsonProperty("e")
-    private String e;
+    @ColumnInfo()
     @JsonProperty("a")
-    private String a;
+    public String a;
+    @ColumnInfo()
     @JsonProperty("d")
-    private String d;
+    public String d;
+    @ColumnInfo()
     @JsonProperty("g")
-    private String g;
+    public String g;
+    @ColumnInfo()
     @JsonProperty("b")
-    private String b;
+    public String b;
+    @ColumnInfo()
     @JsonProperty("e2")
-    private String e2;
+    public String e2;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public static class PitchHelper {
+
+        public static int getPitchNumber(int stringNum, int fret) {
+
+            //TUNING = E2–A2–D3–G3–B3–E4.
+            return 40 + (stringNum - 1) * 5 + fret + (stringNum == StringHelper.GUITAR_STRING.B.getNum() ? -1 : 0);
+        }
+    }
+
+    public static class FretHelper {
+
+        private static int tryParseString(String string) {
+
+            try {
+                return Integer.parseInt(string);
+            } catch (NumberFormatException ignore) {
+            }
+
+            return -1;
+        }
+
+        public static int getFret(int string, Chord chord) {
+
+            switch (string) {
+                case 1:
+                    return tryParseString(chord.getE());
+                case 2:
+                    return tryParseString(chord.getA());
+                case 3:
+                    return tryParseString(chord.getD());
+                case 4:
+                    return tryParseString(chord.getG());
+                case 5:
+                    return tryParseString(chord.getB());
+                case 6:
+                    return tryParseString(chord.getE2());
+            }
+
+            throw new IllegalStateException();
+        }
+    }
 
     public Chord() {
     }
@@ -321,6 +328,44 @@ public class Chord implements Serializable {
 
     public void setB(String b) {
         this.b = b;
+    }
+
+    public static class ChordKeyConverter {
+
+        @TypeConverter
+        public String convert(CHORD_KEY chord_key) {
+
+            return chord_key.getLabel();
+        }
+
+        @TypeConverter
+        public CHORD_KEY convertBack(String chord_key) {
+
+            for (CHORD_KEY key : CHORD_KEY.values()) {
+                if (key.getLabel().equals(chord_key))
+                    return key;
+            }
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public static class ChordTypeConverter {
+
+        @TypeConverter
+        public String convert(CHORD_TYPE chord_key) {
+
+            return chord_key.getLabel();
+        }
+
+        @TypeConverter
+        public CHORD_TYPE convertBack(String chord_type) {
+
+            for (CHORD_TYPE type : CHORD_TYPE.values()) {
+                if (type.getLabel().equals(chord_type))
+                    return type;
+            }
+            throw new IllegalArgumentException();
+        }
     }
 
     @NonNull

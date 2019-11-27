@@ -1,39 +1,82 @@
 package sk.matusskerlik.chordbrowser.ui.fragments;
 
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Executor;
 
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Callback;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
+import javax.inject.Inject;
+
+import retrofit2.Response;
 import sk.matusskerlik.chordbrowser.model.Chord;
 import sk.matusskerlik.chordbrowser.model.ChordGroup;
-import sk.matusskerlik.chordbrowser.model.rest.ChordsApiService;
+import sk.matusskerlik.chordbrowser.model.database.ChordDatabase;
+import sk.matusskerlik.chordbrowser.model.webservice.ChordsWebService;
 
 public class ChordsGridViewModel extends ViewModel {
 
-    OkHttpClient client = new OkHttpClient.Builder()
-            .addInterceptor(new HttpLoggingInterceptor()
-                    .setLevel(HttpLoggingInterceptor.Level.BODY)).build();
+    private ChordsWebService chordsWebService;
+    private ChordDatabase chordDatabase;
+    private Executor executor;
 
-    private Retrofit retrofit = new Retrofit.Builder()
-            .baseUrl("http://pargitaru.id.lv/api/")
-            .client(client)
-            .addConverterFactory(JacksonConverterFactory.create(
-                    new ObjectMapper()
-                            .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-                            .configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, true)
-            ))
-            .build();
+    @Inject
+    public ChordsGridViewModel(ChordsWebService chordsWebService, ChordDatabase chordDatabase, Executor executor) {
+        this.chordsWebService = chordsWebService;
+        this.chordDatabase = chordDatabase;
+        this.executor = executor;
+    }
 
-    private ChordsApiService apiService = retrofit.create(ChordsApiService.class);
+    public LiveData<List<ChordGroup>> getAllChordGroups() {
+
+        final MutableLiveData<List<ChordGroup>> mData = new MutableLiveData<>();
+
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    List<Chord> allChords = chordDatabase.chordDao().getAll();
 
 
-    public void fetchChordsOfName(Chord.CHORD_KEY chord_key, Callback<ChordGroup> callback){
-        apiService.fetchChordsOfName(chord_key.getLabel()).enqueue(callback);
+                    if (allChords.size() > 0) { // if we have chords in database, load them
+                        ChordGroup[] chordGroups = new ChordGroup[Chord.CHORD_KEY.values().length];
+
+                        for (int i = 0; i < Chord.CHORD_KEY.values().length; i++) {
+                            chordGroups[i] = new ChordGroup();
+                            String chordGroupKey = Chord.CHORD_KEY.values()[i].getLabel();
+
+                            for (Chord chord : allChords) {
+                                if (chord.getKey().getLabel().equals(chordGroupKey))
+                                    chordGroups[i].addChord(chord);
+                            }
+                        }
+                        mData.postValue(Arrays.asList(chordGroups));
+                    } else {  // else fetch from api
+                        List<ChordGroup> chordGroups = new ArrayList<>();
+
+                        for (Chord.CHORD_KEY key : Chord.CHORD_KEY.values()) {
+                            Response<ChordGroup> response = chordsWebService
+                                    .fetchChordsOfName(key.getLabel()).execute();
+                            ChordGroup chordGroup = response.body();
+
+                            assert chordGroup != null;
+
+                            chordDatabase.chordDao().insertAll(chordGroup.getChords());
+                            chordGroups.add(chordGroup);
+                        }
+                        mData.postValue(chordGroups);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    //TODO
+                }
+            }
+        });
+
+        return mData;
     }
 }

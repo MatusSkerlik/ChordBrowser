@@ -8,68 +8,41 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProviders;
+import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import javax.inject.Inject;
+
+import dagger.android.support.DaggerFragment;
 import sk.matusskerlik.chordbrowser.R;
 import sk.matusskerlik.chordbrowser.audio.ChordPlayer;
 import sk.matusskerlik.chordbrowser.model.Chord;
 import sk.matusskerlik.chordbrowser.model.ChordGroup;
+import sk.matusskerlik.chordbrowser.sensor.AccelerationSensor;
 import sk.matusskerlik.chordbrowser.ui.views.ChordView;
 
-public class ChordsGridFragment extends Fragment {
+public class ChordsGridFragment extends DaggerFragment {
 
 
-    private ChordsGridViewModel mViewModel;
-    private RecyclerView chordKeyList;
-    private RecyclerView chordTypeList;
+    @Inject
+    public ChordsGridViewModel mViewModel;
+
+    private RecyclerView chordGroupRecyclerView;
+    private RecyclerView chordRecyclerView;
     private ChordView chordView;
+
     private ChordPlayer chordPlayer;
+    private long disablePlayerUntil = 0;
 
-    private int chordKeyListFocusedItem = 0;
-    private int chordTypeListFocusedItem = 0;
+    private int lastFocusedChordIndex = 0;
+    private Chord lastFocusedChord;
 
-    private ChordsRecyclerViewAdapter<ChordGroup> chordKeyListAdapter;
-    private ChordsRecyclerViewAdapter<Chord> chordTypeListAdapter;
-
-    private List<ChordGroup> chordGroups = new ArrayList<>();
-
-    private Callback<ChordGroup> chordsUpdateObserver = new Callback<ChordGroup>(){
-        @Override
-        public void onResponse(@NonNull Call<ChordGroup> call, @NonNull Response<ChordGroup> response) {
-
-            assert response.body() != null;
-
-            ChordGroup chordGroup = response.body();
-            List<Chord> chords = chordGroup.getChords();
-
-            if (chords.size() > 0) {
-
-                chordGroups.add(chordGroup);
-                chordKeyListAdapter.updateBy(chordGroups);
-
-                if ((chordGroups.size() == 1)) {
-
-                    chordTypeListAdapter.updateBy(chords);
-                    chordView.setChordToDraw(chords.get(0));
-                }
-            }
-        }
-
-        @Override
-        public void onFailure(@NonNull Call<ChordGroup> call, @NonNull Throwable t) {
-            //TODO
-        }
-    };
+    private ChordGroupAdapter chordGroupAdapter;
+    private ChordAdapter chordAdapter;
 
 
     /**
@@ -83,11 +56,18 @@ public class ChordsGridFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mViewModel = ViewModelProviders.of(this).get(ChordsGridViewModel.class);
+        mViewModel.getAllChordGroups().observe(this, new Observer<List<ChordGroup>>() {
+            @Override
+            public void onChanged(List<ChordGroup> chordGroups) {
+                chordGroupAdapter.replaceBy(chordGroups);
+                chordAdapter.replaceBy(chordGroupAdapter.getItemAt(0).getChords());
+                // now chords are filtered
+                chordView.setChordToDraw(chordAdapter.getItemAt(0));
 
-        for (Chord.CHORD_KEY key: Chord.CHORD_KEY.values()) {
-            mViewModel.fetchChordsOfName(key, chordsUpdateObserver);
-        }
+                lastFocusedChord = chordAdapter.getItemAt(0);
+                lastFocusedChordIndex = 0;
+            }
+        });
     }
 
     @Override
@@ -102,58 +82,49 @@ public class ChordsGridFragment extends Fragment {
 
         // Set the adapter
         Context context = view.getContext();
-        chordKeyList = (RecyclerView) view.findViewById(R.id.chordKeyList);
-        chordTypeList = (RecyclerView) view.findViewById(R.id.chordTypeList);
+        chordGroupRecyclerView = view.findViewById(R.id.chordKeyList);
+        chordRecyclerView = view.findViewById(R.id.chordTypeList);
 
-        chordKeyList.setLayoutManager(new LinearLayoutManager(context, RecyclerView.HORIZONTAL, false));
-        chordTypeList.setLayoutManager(new LinearLayoutManager(context, RecyclerView.HORIZONTAL, false));
+        chordGroupRecyclerView.setLayoutManager(new LinearLayoutManager(context, RecyclerView.HORIZONTAL, false));
+        chordRecyclerView.setLayoutManager(new LinearLayoutManager(context, RecyclerView.HORIZONTAL, false));
 
-        chordKeyListAdapter = new ChordsRecyclerViewAdapter<>(new ArrayList<ChordGroup>());
-        chordTypeListAdapter = new ChordsRecyclerViewAdapter<>(new ArrayList<Chord>());
-        chordKeyList.setAdapter(chordKeyListAdapter);
-        chordTypeList.setAdapter(chordTypeListAdapter);
+        chordGroupAdapter = new ChordGroupAdapter();
+        chordAdapter = new ChordAdapter();
+        chordGroupRecyclerView.setAdapter(chordGroupAdapter);
+        chordRecyclerView.setAdapter(chordAdapter);
 
-        chordView = (ChordView) view.findViewById(R.id.chordView);
+        chordView = view.findViewById(R.id.chordView);
 
-        new LinearSnapHelper().attachToRecyclerView(chordKeyList);
-        new LinearSnapHelper().attachToRecyclerView(chordTypeList);
+        new LinearSnapHelper().attachToRecyclerView(chordGroupRecyclerView);
+        new LinearSnapHelper().attachToRecyclerView(chordRecyclerView);
 
-        new MiddleItemFinder().attachToRecyclerView(getContext(), chordKeyList, new MiddleItemFinder.MiddleItemCallback() {
+        new MiddleItemFinder().attachToRecyclerView(getContext(), chordGroupRecyclerView, new MiddleItemFinder.MiddleItemCallback() {
             @Override
             public void scrollFinished(int middleElement) {
 
-                chordKeyListFocusedItem = middleElement;
-                chordTypeListAdapter.updateBy(
-                        chordGroups.get(middleElement).getChords()
-                );
-                chordTypeListAdapter.notifyDataSetChanged();
+                chordAdapter.replaceBy(chordGroupAdapter.getItemAt(middleElement).getChords());
 
                 Chord chordToDraw;
                 try {
-                    chordToDraw = chordTypeListAdapter
-                            .getItemAt(chordTypeListFocusedItem);
+                    chordToDraw = chordAdapter.getItemAt(lastFocusedChordIndex);
                 } catch (IndexOutOfBoundsException ignore) {
-                    chordToDraw = chordTypeListAdapter
-                            .getItemAt(chordTypeListAdapter.getItemCount() - 1);
+                    chordToDraw = chordAdapter.getItemAt(chordAdapter.getItemCount() - 1);
                 }
 
                 chordView.setChordToDraw(chordToDraw);
             }
         });
 
-        new MiddleItemFinder().attachToRecyclerView(getContext(), chordTypeList, new MiddleItemFinder.MiddleItemCallback() {
+        new MiddleItemFinder().attachToRecyclerView(getContext(), chordRecyclerView, new MiddleItemFinder.MiddleItemCallback() {
             @Override
             public void scrollFinished(int middleElement) {
-                if (chordTypeListFocusedItem == middleElement)
+                if (lastFocusedChordIndex == middleElement)
                     return;
 
-                chordTypeListFocusedItem = middleElement;
-                chordView.setChordToDraw(
-                        chordTypeListAdapter.getItemAt(middleElement)
-                );
-                chordPlayer.playChord(
-                        chordTypeListAdapter.getItemAt(middleElement)
-                );
+                lastFocusedChordIndex = middleElement;
+                lastFocusedChord = chordAdapter.getItemAt(middleElement);
+                chordView.setChordToDraw(lastFocusedChord);
+                chordPlayer.playChord(lastFocusedChord);
             }
         });
 
@@ -165,6 +136,21 @@ public class ChordsGridFragment extends Fragment {
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
 
+
+        new AccelerationSensor(context).onAcceleration(new AccelerationSensor.AccelerationCallback() {
+            @Override
+            public void onAcceleration() {
+
+                if (disablePlayerUntil < System.currentTimeMillis())
+                    if (lastFocusedChord != null) {
+                        chordPlayer.playChord(lastFocusedChord);
+                        disablePlayerUntil =
+                                System.currentTimeMillis() +
+                                        (ChordPlayer.CHORD_SEQUENCE_DELAY * 5) +
+                                        ChordPlayer.NOTE_LENGTH / 4;
+                    }
+            }
+        });
 
         chordPlayer = new ChordPlayer(context);
     }

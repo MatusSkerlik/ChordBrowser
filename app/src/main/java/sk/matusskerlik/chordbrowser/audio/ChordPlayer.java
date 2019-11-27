@@ -7,7 +7,9 @@ import android.os.Handler;
 import android.util.SparseIntArray;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
@@ -15,13 +17,17 @@ import sk.matusskerlik.chordbrowser.model.Chord;
 
 public class ChordPlayer {
 
-    public static int CHORD_SEQUENCE_DELAY = 333;
+    private static final Object loadLock = new Object();
+    public static int CHORD_SEQUENCE_DELAY = 50;
     public static int NOTE_LENGTH = 4000;
+    private static String[] stringLabels = {"e", "a", "d", "g", "b", "e2"};
 
     private Context context;
     private List<AtomicBoolean> playableReferences = new ArrayList<>();
     private AtomicIntegerArray playedResources = new AtomicIntegerArray(6);
+    private final Map<String, Integer> stringResourceMap = new HashMap<>();
 
+    private SparseIntArray pitchToRes = new SparseIntArray();
     private SoundPool soundPool = new SoundPool.Builder()
             .setAudioAttributes(
                     new AudioAttributes.Builder()
@@ -30,10 +36,8 @@ public class ChordPlayer {
                             .setUsage(AudioAttributes.USAGE_GAME)
                             .build()
             )
-            .setMaxStreams(38)
+            .setMaxStreams(6 * 12)
             .build();
-
-    private SparseIntArray pitchToRes = new SparseIntArray();
     private Handler mHandler = new Handler();
 
     public ChordPlayer(Context context) {
@@ -46,28 +50,38 @@ public class ChordPlayer {
 
         playableReferences.add(new AtomicBoolean(true));
 
-        for (int i = 40; i < 79; i++) {
-
-            int resId = soundPool.load(context, context.getResources().getIdentifier(
-                    "res" + String.valueOf(i), "raw",
-                    context.getPackageName()), 1);
-            System.out.println("Loaded sound: " + resId);
-            pitchToRes.put(i, resId);
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (loadLock) {
+                    for (final String stringName : stringLabels) {
+                        for (int fret = 0; fret < 13; fret++) {
+                            int resId = soundPool.load(context, context.getResources().getIdentifier(
+                                    stringName + fret, "raw",
+                                    context.getPackageName()), 1);
+                            System.out.println("Loaded sound: " + stringName + fret);
+                            stringResourceMap.put(stringName + fret, resId);
+                        }
+                    }
+                }
+            }
+        }).start();
     }
 
     private int mapStringFretToAudio(int string, int fret){
 
-        int pitch = Chord.PitchHelper.getPitchNumber(string, fret);
+        synchronized (loadLock) {
 
-        System.out.println("String : " + string + " Fret : " +  fret + " " + "play pitch -> " + pitch);
+            String string_name = stringLabels[string - 1];
+            System.out.println("String : " + string_name + " Fret : " + fret);
 
-        return pitchToRes.get(pitch);
+            return stringResourceMap.get(string_name + fret);
+        }
     }
 
     public void playChord(Chord chord){
 
-        int delay = 0;
+        int delay = CHORD_SEQUENCE_DELAY;
 
         // disable before postDelayed plays
         playableReferences.get(playableReferences.size() - 1).set(false);
@@ -93,7 +107,7 @@ public class ChordPlayer {
                 @Override
                 public void run() {
                     if (playableRef.get())
-                        soundPool.play(resId, 0.8f, 0.8f, 1, 0, 1);
+                        soundPool.play(resId, 1f, 1f, 1, 0, 1);
                 }
             }, delay);
 
