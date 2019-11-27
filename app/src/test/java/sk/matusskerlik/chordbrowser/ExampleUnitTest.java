@@ -1,8 +1,13 @@
+/*
+ * Copyright (c) 2019 Matúš Škerlík.
+ * All rights reserved.
+ */
+
 package sk.matusskerlik.chordbrowser;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
