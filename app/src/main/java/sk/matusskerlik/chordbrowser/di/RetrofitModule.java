@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019 Matúš Škerlík.
+ * All rights reserved.
+ */
+
 package sk.matusskerlik.chordbrowser.di;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;

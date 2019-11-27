@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019 Matúš Škerlík.
+ * All rights reserved.
+ */
+
 package sk.matusskerlik.chordbrowser.model;
 
 import androidx.annotation.NonNull;
