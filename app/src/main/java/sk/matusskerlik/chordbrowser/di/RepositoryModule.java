@@ -12,13 +12,14 @@ import dagger.Provides;
 import sk.matusskerlik.chordbrowser.model.database.ChordDatabase;
 import sk.matusskerlik.chordbrowser.model.repository.ChordRepository;
 import sk.matusskerlik.chordbrowser.model.webservice.ChordsWebService;
+import sk.matusskerlik.chordbrowser.ui.utils.Toaster;
 
 @Module
 public class RepositoryModule {
 
     @Provides
     @ActivityScope
-    public ChordRepository providesUserRepository(ChordsWebService chordsWebService, ChordDatabase database, Executor executor) {
-        return new ChordRepository(chordsWebService, database, executor);
+    public ChordRepository providesUserRepository(ChordsWebService chordsWebService, ChordDatabase database, Executor executor, Toaster toaster) {
+        return new ChordRepository(chordsWebService, database, executor, toaster);
     }
 }

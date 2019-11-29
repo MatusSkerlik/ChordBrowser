@@ -5,6 +5,10 @@
 
 package sk.matusskerlik.chordbrowser.model.repository;
 
+import android.os.Handler;
+import android.os.Looper;
+
+import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -22,21 +26,24 @@ import sk.matusskerlik.chordbrowser.model.Chord;
 import sk.matusskerlik.chordbrowser.model.ChordGroup;
 import sk.matusskerlik.chordbrowser.model.database.ChordDatabase;
 import sk.matusskerlik.chordbrowser.model.webservice.ChordsWebService;
+import sk.matusskerlik.chordbrowser.ui.utils.Toaster;
 
 public class ChordRepository {
 
     private ChordsWebService chordsWebService;
     private ChordDatabase chordDatabase;
     private Executor executor;
+    private Toaster toaster;
 
     @Inject
-    public ChordRepository(ChordsWebService chordsWebService, ChordDatabase chordDatabase, Executor executor) {
+    public ChordRepository(ChordsWebService chordsWebService, ChordDatabase chordDatabase, Executor executor, Toaster toaster) {
         this.chordsWebService = chordsWebService;
         this.chordDatabase = chordDatabase;
         this.executor = executor;
+        this.toaster = toaster;
     }
 
-    public LiveData<List<ChordGroup>> getAllChordGroups() {
+    public LiveData<List<ChordGroup>> getAllChordGroups(@Nullable final RepositoryListener mListener) {
 
         final MutableLiveData<List<ChordGroup>> mData = new MutableLiveData<>();
         executor.execute(new Runnable() {
@@ -76,9 +83,19 @@ public class ChordRepository {
                         }
                         mData.postValue(chordGroups);
                     }
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     e.printStackTrace();
-                    //TODO
+
+                    //run on ui thread
+                    if (mListener != null) {
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                toaster.showText("Communication error !!.");
+                                mListener.onError(e);
+                            }
+                        });
+                    }
                 }
             }
         });
@@ -110,5 +127,10 @@ public class ChordRepository {
         }
 
         return copy;
+    }
+
+    public interface RepositoryListener {
+
+        void onError(Exception e);
     }
 }

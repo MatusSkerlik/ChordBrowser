@@ -6,6 +6,8 @@
 <resources>
     <string name="loading">Načítavam…</string>
     <string name="app_name">Knižnica akordov</string>
+    <string name="loading_error">Načítavanie zlyhalo…</string>
+    <string name="loading_reset">Načítať znova</string>
 
     <!-- TODO: Remove or change this placeholder text -->
 </resources>

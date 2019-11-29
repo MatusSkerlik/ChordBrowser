@@ -6,4 +6,6 @@
 <resources>
     <string name="app_name">Chord Liblary</string>
     <string name="loading">Loading…</string>
+    <string name="loading_error">Fetch failed…</string>
+    <string name="loading_reset">Fetch reset</string>
 </resources>

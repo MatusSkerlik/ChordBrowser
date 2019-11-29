@@ -10,6 +10,10 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,11 +26,15 @@ import javax.inject.Inject;
 import dagger.android.support.DaggerFragment;
 import sk.matusskerlik.chordbrowser.R;
 import sk.matusskerlik.chordbrowser.model.ChordGroup;
+import sk.matusskerlik.chordbrowser.model.repository.ChordRepository;
 
 public class LoadingFragment extends DaggerFragment {
 
     @Inject
     public LoadingViewModel mViewModel;
+
+    private LinearLayout linearLayoutContainer;
+    private TextView loadingTextView;
 
     private LoadingFragmentCallbacks mCallback;
 
@@ -37,24 +45,52 @@ public class LoadingFragment extends DaggerFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.loading_fragment, container, false);
+        View infView = inflater.inflate(R.layout.loading_fragment, container, false);
+
+        linearLayoutContainer = infView.findViewById(R.id.loading_layout_container);
+        loadingTextView = infView.findViewById(R.id.loading_message);
+
+        return infView;
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(final Context context) {
         super.onAttach(context);
 
         if (context instanceof LoadingFragmentCallbacks)
             mCallback = (LoadingFragmentCallbacks) context;
         else
             throw new RuntimeException("Activity must implement LoadingFragmentCallbacks");
+
+        fetchChords(context);
     }
 
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    private void fetchChords(final Context context) {
 
-        mViewModel.getAllChordGroups().observe(this, new Observer<List<ChordGroup>>() {
+        mViewModel.getAllChordGroups(new ChordRepository.RepositoryListener() {
+            @Override
+            public void onError(Exception e) {
+                loadingTextView.setText(R.string.loading_error);
+
+                final ProgressBar progressBar = linearLayoutContainer.findViewById(R.id.loading_bar);
+                linearLayoutContainer.removeView(progressBar);
+
+                final Button resetButton = new Button(context);
+                resetButton.setText(R.string.loading_reset);
+
+                resetButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        linearLayoutContainer.removeView(resetButton);
+                        linearLayoutContainer.addView(progressBar);
+                        loadingTextView.setText(R.string.loading);
+                        fetchChords(context);
+                    }
+                });
+
+                linearLayoutContainer.addView(resetButton);
+            }
+        }).observe(this, new Observer<List<ChordGroup>>() {
             @Override
             public void onChanged(List<ChordGroup> chordGroups) {
                 mCallback.dataEndLoading();

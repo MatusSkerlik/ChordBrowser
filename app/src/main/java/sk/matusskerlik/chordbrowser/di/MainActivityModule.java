@@ -17,7 +17,8 @@ abstract class MainActivityModule {
             FragmentsModule.class,
             RetrofitModule.class,
             RepositoryModule.class,
-            AudioModule.class
+            AudioModule.class,
+            ToastModule.class
     })
     abstract MainActivity contributeActivityInjector();
 }

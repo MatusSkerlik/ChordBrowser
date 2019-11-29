@@ -24,7 +24,7 @@ public class LoadingViewModel extends ViewModel {
         this.chordRepository = chordRepository;
     }
 
-    public LiveData<List<ChordGroup>> getAllChordGroups() {
-        return chordRepository.getAllChordGroups();
+    LiveData<List<ChordGroup>> getAllChordGroups(ChordRepository.RepositoryListener mListener) {
+        return chordRepository.getAllChordGroups(mListener);
     }
 }

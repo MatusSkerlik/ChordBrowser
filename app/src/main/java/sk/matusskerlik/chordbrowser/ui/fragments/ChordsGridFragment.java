@@ -62,7 +62,7 @@ public class ChordsGridFragment extends DaggerFragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mViewModel.getAllChordGroups().observe(this, new Observer<List<ChordGroup>>() {
+        mViewModel.getAllChordGroups(null).observe(this, new Observer<List<ChordGroup>>() {
             @Override
             public void onChanged(List<ChordGroup> chordGroups) {
                 chordGroupAdapter.replaceBy(chordGroups);
