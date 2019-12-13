@@ -8,6 +8,5 @@
     <string name="app_name">Knižnica akordov</string>
     <string name="loading_error">Načítavanie zlyhalo…</string>
     <string name="loading_reset">Načítať znova</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
+    <string name="title_activity_settings">Nastavenia</string>
 </resources>

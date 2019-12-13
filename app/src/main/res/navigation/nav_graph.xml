@@ -12,7 +12,11 @@
         android:id="@+id/chordsGridFragment"
         android:name="sk.matusskerlik.chordbrowser.ui.fragments.ChordsGridFragment"
         android:label="fragment_chords_gird"
-        tools:layout="@layout/fragment_chords_gird" />
+        tools:layout="@layout/fragment_chords_gird">
+        <action
+            android:id="@+id/action_chordsGridFragment_to_settingsActivity"
+            app:destination="@id/settingsActivity" />
+    </fragment>
     <fragment
         android:id="@+id/loadingFragment"
         android:name="sk.matusskerlik.chordbrowser.ui.fragments.LoadingFragment"
@@ -22,4 +26,8 @@
             android:id="@+id/action_loadingFragment_to_chordsGridFragment"
             app:destination="@id/chordsGridFragment" />
     </fragment>
+    <activity
+        android:id="@+id/settingsActivity"
+        android:name="sk.matusskerlik.chordbrowser.SettingsActivity"
+        android:label="SettingsActivity" />
 </navigation>
